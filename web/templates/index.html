@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BreachScope — Breach Intelligence Platform</title>
+    <style>
+        :root {
+            --bg: #0a0e17;
+            --surface: #111827;
+            --border: #1f2937;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --danger: #ef4444;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --text: #f3f4f6;
+            --text-muted: #9ca3af;
+            --radius: 12px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+        .container { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
+        header { text-align: center; padding: 3rem 1rem 2rem; }
+        .logo { font-size: 2.5rem; font-weight: 800; letter-spacing: -0.03em; }
+        .logo span { color: var(--primary); }
+        .tagline { color: var(--text-muted); margin-top: 0.5rem; font-size: 1.1rem; }
+        .search-box {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 2rem;
+            margin: 2rem 0;
+        }
+        .search-row { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+        select, input {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        select:focus, input:focus { border-color: var(--primary); }
+        select { flex: 0 0 140px; }
+        input.search-input { flex: 1; min-width: 250px; }
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 2rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover { background: var(--primary-hover); }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .result-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 2rem;
+            margin-top: 1.5rem;
+            display: none;
+        }
+        .result-card.show { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; } }
+        .result-safe { border-left: 4px solid var(--success); }
+        .result-danger { border-left: 4px solid var(--danger); }
+        .result-icon { font-size: 3rem; margin-bottom: 1rem; }
+        .result-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .result-subtitle { color: var(--text-muted); margin-bottom: 1.5rem; }
+        .breach-list { display: flex; flex-direction: column; gap: 0.75rem; }
+        .breach-item {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .breach-name { font-weight: 600; }
+        .breach-date { color: var(--text-muted); font-size: 0.875rem; }
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .badge-danger { background: rgba(239,68,68,0.15); color: var(--danger); }
+        .badge-success { background: rgba(16,185,129,0.15); color: var(--success); }
+        .badge-warning { background: rgba(245,158,11,0.15); color: var(--warning); }
+        .verify-section {
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border);
+        }
+        .verify-box {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+        }
+        .otp-input { letter-spacing: 0.5rem; text-align: center; font-size: 1.5rem; width: 200px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 2rem; }
+        .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; text-align: center; }
+        .stat-value { font-size: 2rem; font-weight: 800; color: var(--primary); }
+        .stat-label { color: var(--text-muted); margin-top: 0.25rem; font-size: 0.875rem; }
+        .loading { display: inline-block; width: 20px; height: 20px; border: 3px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.6s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .footer { text-align: center; padding: 3rem 1rem; color: var(--text-muted); font-size: 0.875rem; }
+        .data-types { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem; }
+        .data-type-badge { background: rgba(59,130,246,0.1); color: var(--primary); padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.75rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">Breach<span>Scope</span> 🔍</div>
+            <p class="tagline">Advanced Breach Intelligence Platform — Know if you've been compromised</p>
+        </header>
+
+        <div class="search-box">
+            <div class="search-row">
+                <select id="queryType">
+                    <option value="email">Email</option>
+                    <option value="username">Username</option>
+                    <option value="phone">Phone</option>
+                    <option value="domain">Domain</option>
+                </select>
+                <input type="text" id="searchQuery" class="search-input" placeholder="Enter your email, username, or phone..." />
+                <button id="searchBtn" onclick="doSearch()">Search</button>
+            </div>
+        </div>
+
+        <div id="resultCard" class="result-card"></div>
+
+        <div class="stats-grid" id="statsGrid"></div>
+    </div>
+
+    <div class="footer">
+        <p>BreachScope v1.0 — Privacy-first breach intelligence. Your data is never stored in plaintext.</p>
+        <p style="margin-top: 0.5rem;">For authorized security research only. Users are responsible for compliance with applicable laws.</p>
+    </div>
+
+    <script>
+        const API = '';
+
+        async function doSearch() {
+            const queryType = document.getElementById('queryType').value;
+            const query = document.getElementById('searchQuery').value.trim();
+            const btn = document.getElementById('searchBtn');
+            const card = document.getElementById('resultCard');
+
+            if (!query) return;
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span>';
+
+            try {
+                const resp = await fetch(`${API}/api/search`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query, query_type: queryType })
+                });
+                const data = await resp.json();
+
+                card.className = 'result-card show ' + (data.compromised ? 'result-danger' : 'result-safe');
+
+                if (data.compromised) {
+                    let breachesHtml = data.breaches.map(b => `
+                        <div class="breach-item">
+                            <div>
+                                <div class="breach-name">${b.name}</div>
+                                <div class="data-types">
+                                    ${(data.data_types || []).map(t => `<span class="data-type-badge">${t}</span>`).join('')}
+                                </div>
+                            </div>
+                            <span class="badge badge-danger">Compromised</span>
+                        </div>
+                    `).join('');
+
+                    card.innerHTML = `
+                        <div class="result-icon">⚠️</div>
+                        <div class="result-title">Your data was found in ${data.breach_count} breach${data.breach_count > 1 ? 'es' : ''}</div>
+                        <div class="result-subtitle">We found your ${queryType} in the following breaches. Verify ownership to see what data was exposed.</div>
+                        <div class="breach-list">${breachesHtml}</div>
+                        <div class="verify-section">
+                            <h3 style="margin-bottom: 0.5rem;">Verify Ownership to See Details</h3>
+                            <p style="color: var(--text-muted); margin-bottom: 1rem; font-size: 0.875rem;">We'll send a one-time code to your email. Only you can see your breach data.</p>
+                            <div class="verify-box">
+                                <div class="search-row">
+                                    <input type="email" id="verifyEmail" class="search-input" placeholder="Your email address" value="${queryType === 'email' ? query : ''}" />
+                                    <button onclick="requestOtp('${queryType === 'email' ? query : ''}')">Send Code</button>
+                                </div>
+                                <div id="otpSection" style="display: none; margin-top: 1rem;">
+                                    <div class="search-row">
+                                        <input type="text" id="otpCode" class="otp-input" placeholder="000000" maxlength="6" />
+                                        <button onclick="verifyOtp()">Verify & Reveal</button>
+                                    </div>
+                                </div>
+                                <div id="verifiedData" style="margin-top: 1rem;"></div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    card.innerHTML = `
+                        <div class="result-icon">✅</div>
+                        <div class="result-title">You're safe!</div>
+                        <div class="result-subtitle">No breaches found for "${query}". Your ${queryType} has not been found in any indexed breach.</div>
+                    `;
+                }
+            } catch (e) {
+                card.className = 'result-card show';
+                card.innerHTML = `<div class="result-title">Error</div><div class="result-subtitle">${e.message}</div>`;
+            }
+
+            btn.disabled = false;
+            btn.textContent = 'Search';
+        }
+
+        async function requestOtp(prefilledEmail) {
+            const email = document.getElementById('verifyEmail').value.trim();
+            if (!email) return alert('Enter your email');
+
+            try {
+                const resp = await fetch(`${API}/api/verify/request`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+                const data = await resp.json();
+
+                document.getElementById('otpSection').style.display = 'block';
+
+                if (data.dev_otp) {
+                    alert(`DEV MODE — OTP: ${data.dev_otp}`);
+                }
+            } catch (e) {
+                alert('Error: ' + e.message);
+            }
+        }
+
+        async function verifyOtp() {
+            const email = document.getElementById('verifyEmail').value.trim();
+            const otp = document.getElementById('otpCode').value.trim();
+            if (!otp) return;
+
+            try {
+                const resp = await fetch(`${API}/api/verify/confirm`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, otp })
+                });
+                const data = await resp.json();
+
+                if (data.breaches) {
+                    let html = '<div class="breach-list">';
+                    for (const b of data.breaches) {
+                        const r = b.record;
+                        html += `
+                            <div class="breach-item" style="flex-direction: column; align-items: flex-start;">
+                                <div style="width: 100%; display: flex; justify-content: space-between;">
+                                    <span class="breach-name">${b.breach_name}</span>
+                                    <span class="breach-date">${b.breach_date || 'Unknown date'}</span>
+                                </div>
+                                <div style="margin-top: 0.5rem; width: 100%;">
+                                    ${r.username ? `<div>👤 Username: <code>${r.username}</code></div>` : ''}
+                                    ${r.full_name ? `<div>📛 Name: <code>${r.full_name}</code></div>` : ''}
+                                    ${r.ip_address ? `<div>🌐 IP: <code>${r.ip_address}</code></div>` : ''}
+                                    ${r.country ? `<div>🌍 Country: <code>${r.country}</code></div>` : ''}
+                                    ${r.phone ? `<div>📱 Phone: <code>${r.phone}</code></div>` : ''}
+                                    ${r.password_present ? `<div>🔑 Password: <code>${r.password_sha1_prefix}•••••${r.password_sha1_suffix}</code> (SHA1 partial — verify with HIBP)</div>` : ''}
+                                    ${Object.keys(r.extra_data || {}).length ? `<details><summary>Extra data</summary><pre style="font-size: 0.75rem; margin-top: 0.5rem;">${JSON.stringify(r.extra_data, null, 2)}</pre></details>` : ''}
+                                </div>
+                            </div>
+                        `;
+                    }
+                    html += '</div>';
+                    document.getElementById('verifiedData').innerHTML = html;
+                }
+            } catch (e) {
+                alert('Error: ' + e.message);
+            }
+        }
+
+        async function loadStats() {
+            try {
+                const resp = await fetch(`${API}/api/stats`);
+                const data = await resp.json();
+                const grid = document.getElementById('statsGrid');
+                grid.innerHTML = `
+                    <div class="stat-card"><div class="stat-value">${data.total_breaches}</div><div class="stat-label">Breaches Indexed</div></div>
+                    <div class="stat-card"><div class="stat-value">${data.total_records.toLocaleString()}</div><div class="stat-label">Records Indexed</div></div>
+                    <div class="stat-card"><div class="stat-value">${data.breaches.length}</div><div class="stat-label">Unique Sources</div></div>
+                `;
+            } catch (e) {}
+        }
+
+        document.getElementById('searchQuery').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') doSearch();
+        });
+
+        loadStats();
+    </script>
+</body>
+</html>

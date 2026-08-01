@@ -1,0 +1,12 @@
+data/
+indexes/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+__pycache__/
+*.pyc
+.env
+uploads/
+data/
+breachscope/data/
